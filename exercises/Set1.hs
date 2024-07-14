@@ -89,11 +89,10 @@ checkPassword password =
 -- in grams, and returns the cost in credits.
 
 postagePrice :: Int -> Int
-postagePrice w = case w of
-  _
-    | w <= 500 -> 250
-    | w > 500 && w <= 5000 -> 300 + w
-    | otherwise -> 6000
+postagePrice w
+  | w <= 500 = 250
+  | w > 500 && w <= 5000 = 300 + w
+  | otherwise = 6000
 
 ------------------------------------------------------------------------------
 -- Ex 8: define a function isZero that returns True if it is given an
