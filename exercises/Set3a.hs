@@ -140,7 +140,9 @@ powers k max = takeWhile (<= max) [k ^ i | i <- [0 ..]]
 --     ==> Avvt
 
 while :: (a -> Bool) -> (a -> a) -> a -> a
-while check update value = todo
+while check update value
+  | check value = while check update (update value)
+  | otherwise = value
 
 ------------------------------------------------------------------------------
 -- Ex 8: another version of a while loop. This time, the check
@@ -160,7 +162,9 @@ while check update value = todo
 -- Hint! Remember the case-of expression from lecture 2.
 
 whileRight :: (a -> Either b a) -> a -> b
-whileRight check x = todo
+whileRight check x = case check x of
+  Right checkedX -> whileRight check checkedX
+  Left checkedX -> checkedX
 
 -- for the whileRight examples:
 -- step k x doubles x if it's less than k
@@ -184,7 +188,7 @@ bomb x = Right (x - 1)
 -- Hint! This is a great use for list comprehensions
 
 joinToLength :: Int -> [String] -> [String]
-joinToLength = todo
+joinToLength k xs = [x ++ y | x <- xs, y <- xs, length (x ++ y) == k]
 
 ------------------------------------------------------------------------------
 -- Ex 10: implement the operator +|+ that returns a list with the first
@@ -197,6 +201,9 @@ joinToLength = todo
 --   [1,2,3] +|+ [4,5,6]  ==> [1,4]
 --   [] +|+ [True]        ==> [True]
 --   [] +|+ []            ==> []
+
+(+|+) :: [a] -> [a] -> [a]
+(+|+) a b = take 1 a ++ take 1 b
 
 ------------------------------------------------------------------------------
 -- Ex 11: remember the lectureParticipants example from Lecture 2? We
