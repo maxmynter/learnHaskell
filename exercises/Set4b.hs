@@ -36,7 +36,10 @@ myMaximum :: [Int] -> Int
 myMaximum [] = 0
 myMaximum (x : xs) = foldr maxHelper x xs
 
-maxHelper = todo
+maxHelper :: (Ord a) => a -> a -> a
+maxHelper x y
+  | x < y = y
+  | otherwise = x
 
 ------------------------------------------------------------------------------
 -- Ex 3: compute the sum and length of a list with a fold. Define
@@ -52,9 +55,11 @@ maxHelper = todo
 sumAndLength :: [Double] -> (Double, Int)
 sumAndLength xs = foldr slHelper slStart xs
 
-slStart = todo
+slStart :: (Double, Int)
+slStart = (0.0, 0)
 
-slHelper = todo
+slHelper :: Double -> (Double, Int) -> (Double, Int)
+slHelper e (s, l) = (s + e, l + 1)
 
 ------------------------------------------------------------------------------
 -- Ex 4: implement concat with a fold. Define concatHelper and
