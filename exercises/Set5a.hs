@@ -1,7 +1,7 @@
 -- Exercise set 5a
 --
--- * defining algebraic datatypes
--- * recursive datatypes
+-- \* defining algebraic datatypes
+-- \* recursive datatypes
 
 module Set5a where
 
@@ -12,14 +12,13 @@ import Mooc.Todo
 -- Bus, Tram and Train.
 --
 -- The constructors don't need any fields.
-
+data Vehicle = Bike | Bus | Tram | Train
 
 ------------------------------------------------------------------------------
 -- Ex 2: Define the type BusTicket that can represent values like these:
 --  - SingleTicket
 --  - MonthlyTicket "January"
 --  - MonthlyTicket "December"
-
 
 ------------------------------------------------------------------------------
 -- Ex 3: Here's the definition for a datatype ShoppingEntry that
@@ -30,7 +29,7 @@ import Mooc.Todo
 -- Implement the functions totalPrice and buyOneMore below.
 
 data ShoppingEntry = MkShoppingEntry String Double Int
-  deriving Show
+  deriving (Show)
 
 threeApples :: ShoppingEntry
 threeApples = MkShoppingEntry "Apple" 0.5 3
@@ -66,7 +65,7 @@ buyOneMore = todo
 -- setAge and setName (see below).
 
 data Person = PersonUndefined
-  deriving Show
+  deriving (Show)
 
 -- fred is a person whose name is Fred and age is 90
 fred :: Person
@@ -123,7 +122,7 @@ right = todo
 -- either be a freshman, a nth year student, or graduated.
 
 data Student = Freshman | NthYear Int | Graduated
-  deriving (Show,Eq)
+  deriving (Show, Eq)
 
 -- Implement the function study, which changes a Freshman into a 1st
 -- year student, a 1st year student into a 2nd year student, and so
@@ -195,7 +194,7 @@ toggle ud = todo
 -- rgb (Mix (Invert Red) (Invert Green))  ==> [0.5,0.5,1]
 
 data Color = Red | Green | Blue | Mix Color Color | Invert Color
-  deriving Show
+  deriving (Show)
 
 rgb :: Color -> [Double]
 rgb col = todo
@@ -207,7 +206,6 @@ rgb col = todo
 -- Examples:
 --   One True         ::  OneOrTwo Bool
 --   Two "cat" "dog"  ::  OneOrTwo String
-
 
 ------------------------------------------------------------------------------
 -- Ex 10: define a recursive datatype KeyVals for storing a set of
@@ -229,12 +227,12 @@ rgb col = todo
 -- KeyVals and lists of pairs.
 
 data KeyVals k v = KeyValsUndefined
-  deriving Show
+  deriving (Show)
 
-toList :: KeyVals k v -> [(k,v)]
+toList :: KeyVals k v -> [(k, v)]
 toList = todo
 
-fromList :: [(k,v)] -> KeyVals k v
+fromList :: [(k, v)] -> KeyVals k v
 fromList = todo
 
 ------------------------------------------------------------------------------
@@ -249,7 +247,7 @@ fromList = todo
 --
 
 data Nat = Zero | PlusOne Nat
-  deriving (Show,Eq)
+  deriving (Show, Eq)
 
 fromNat :: Nat -> Int
 fromNat n = todo
@@ -310,7 +308,7 @@ data Bin = End | O Bin | I Bin
 
 -- This function increments a binary number by one.
 inc :: Bin -> Bin
-inc End   = I End
+inc End = I End
 inc (O b) = I b
 inc (I b) = O (inc b)
 
