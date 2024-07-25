@@ -206,7 +206,7 @@ rgb :: Color -> [Double]
 rgb Red = [1, 0, 0]
 rgb Green = [0, 1, 0]
 rgb Blue = [0, 0, 1]
-rgb (Mix c1 c2) = map (\(x1, x2) -> (x1 + x2) / 2) (zip (rgb c1) (rgb c1))
+rgb (Mix c1 c2) = zipWith (\x1 x2 -> (x1 + x2) / 2) (rgb c1) (rgb c2)
 rgb (Invert a) = map (\x -> 1 - x) (rgb a)
 
 ------------------------------------------------------------------------------
@@ -216,6 +216,8 @@ rgb (Invert a) = map (\x -> 1 - x) (rgb a)
 -- Examples:
 --   One True         ::  OneOrTwo Bool
 --   Two "cat" "dog"  ::  OneOrTwo String
+
+data OneOrTwo a = One a | Two a a
 
 ------------------------------------------------------------------------------
 -- Ex 10: define a recursive datatype KeyVals for storing a set of
@@ -236,14 +238,16 @@ rgb (Invert a) = map (\x -> 1 - x) (rgb a)
 -- Also define the functions toList and fromList that convert between
 -- KeyVals and lists of pairs.
 
-data KeyVals k v = KeyValsUndefined
+data KeyVals k v = Empty | Pair k v (KeyVals k v)
   deriving (Show)
 
 toList :: KeyVals k v -> [(k, v)]
-toList = todo
+toList Empty = []
+toList (Pair k v next) = [(k, v)] ++ toList next
 
 fromList :: [(k, v)] -> KeyVals k v
-fromList = todo
+fromList [] = Empty
+fromList ((k, v) : kvs) = Pair k v (fromList kvs)
 
 ------------------------------------------------------------------------------
 -- Ex 11: The data type Nat is the so called Peano
@@ -260,12 +264,18 @@ data Nat = Zero | PlusOne Nat
   deriving (Show, Eq)
 
 fromNat :: Nat -> Int
-fromNat n = todo
+fromNat Zero = 0
+fromNat (PlusOne n) = 1 + fromNat n
 
 toNat :: Int -> Maybe Nat
-toNat z = todo
+toNat z
+  | z > 0 = case toNat (z - 1) of
+      Just n -> Just $ PlusOne n
+      Nothing -> Nothing
+  | z == 0 = Just Zero
+  | otherwise = Nothing
 
-------------------------------------------------------------------------------
+-----------------------------------------------------------------------------
 -- Ex 12: While pleasingly simple in its definition, the Nat datatype is not
 -- very efficient computationally. Instead of the unary Peano natural numbers,
 -- computers use binary numbers.
@@ -323,10 +333,30 @@ inc (O b) = I b
 inc (I b) = O (inc b)
 
 prettyPrint :: Bin -> String
-prettyPrint = todo
+prettyPrint End = ""
+prettyPrint (O b) = prettyPrint b ++ "0"
+prettyPrint (I b) = prettyPrint b ++ "1"
 
 fromBin :: Bin -> Int
-fromBin = todo
+fromBin b = fromBin' b 0
+
+fromBin' :: Bin -> Int -> Int
+fromBin' End curr = 0
+fromBin' (I x) n = (1 * (2 ^ n)) + fromBin' x (n + 1)
+fromBin' (O x) n = (0 * (2 ^ n)) + fromBin' x (n + 1)
 
 toBin :: Int -> Bin
-toBin = todo
+toBin 0 = O End
+toBin n = reverse' $ go n End
+  where
+    go 0 acc = acc
+    go n acc
+      | even n = go (n `div` 2) (O acc)
+      | otherwise = go (n `div` 2) (I acc)
+
+reverse' :: Bin -> Bin
+reverse' = rev End
+  where
+    rev acc End = acc
+    rev acc (O b) = rev (O acc) b
+    rev acc (I b) = rev (I acc) b
