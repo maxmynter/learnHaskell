@@ -83,6 +83,16 @@ instance (Eq a) => Eq (List a) where
 -- Example:
 --   price ChickenEgg  ==>  20
 
+class Price a where
+  price :: a -> Int
+
+instance Price Egg where
+  price ChickenEgg = 20
+  price ChocolateEgg = 30
+
+instance Price Milk where
+  price (Milk litres) = litres * 15
+
 data Egg = ChickenEgg | ChocolateEgg
   deriving (Show)
 
@@ -97,6 +107,13 @@ data Milk = Milk Int -- amount in litres
 -- price [Milk 1, Milk 2]  ==> 45
 -- price [Just ChocolateEgg, Nothing, Just ChickenEgg]  ==> 50
 -- price [Nothing, Nothing, Just (Milk 1), Just (Milk 2)]  ==> 45
+--
+instance (Price a) => Price (Maybe a) where
+  price (Just a) = price a
+  price Nothing = 0
+
+instance (Price a) => Price [a] where
+  price = sum . map price
 
 ------------------------------------------------------------------------------
 -- Ex 7: below you'll find the datatype Number, which is either an
@@ -107,6 +124,12 @@ data Milk = Milk Int -- amount in litres
 
 data Number = Finite Integer | Infinite
   deriving (Show, Eq)
+
+instance Ord Number where
+  compare Infinite Infinite = EQ
+  compare Infinite _ = GT
+  compare _ Infinite = LT
+  compare (Finite a) (Finite b) = compare a b
 
 ------------------------------------------------------------------------------
 -- Ex 8: rational numbers have a numerator and a denominator that are
@@ -132,7 +155,7 @@ data RationalNumber = RationalNumber Integer Integer
   deriving (Show)
 
 instance Eq RationalNumber where
-  p == q = todo
+  RationalNumber pn pd == RationalNumber qn qd = pn * qd == qn * pd
 
 ------------------------------------------------------------------------------
 -- Ex 9: implement the function simplify, which simplifies a rational
@@ -150,9 +173,13 @@ instance Eq RationalNumber where
 --     15        3 * 5         5
 --
 -- Hint: Remember the function gcd?
+myGcd :: Integer -> Integer -> Integer
+myGcd a b
+  | b == 0 = abs a
+  | otherwise = myGcd b (mod a b)
 
 simplify :: RationalNumber -> RationalNumber
-simplify p = todo
+simplify (RationalNumber n d) = RationalNumber (div n f) (div d f) where f = myGcd n d
 
 ------------------------------------------------------------------------------
 -- Ex 10: implement the typeclass Num for RationalNumber. The results
@@ -173,12 +200,12 @@ simplify p = todo
 --   signum (RationalNumber 0 2)             ==> RationalNumber 0 1
 
 instance Num RationalNumber where
-  p + q = todo
-  p * q = todo
-  abs q = todo
-  signum q = todo
-  fromInteger x = todo
-  negate q = todo
+  (RationalNumber pn pd) + (RationalNumber qn qd) = simplify $ RationalNumber ((pn * qd) + (qn * pd)) (pd * qd)
+  (RationalNumber pn pd) * (RationalNumber qn qd) = simplify $ RationalNumber (pn * qn) (pd * qd)
+  abs (RationalNumber n d) = RationalNumber (abs n) (abs d)
+  signum (RationalNumber n d) = RationalNumber (signum n * signum d) 1
+  fromInteger x = RationalNumber x 1
+  negate (RationalNumber n d) = RationalNumber (-n) d
 
 ------------------------------------------------------------------------------
 -- Ex 11: a class for adding things. Define a class Addable with a
