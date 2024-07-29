@@ -49,15 +49,25 @@ data Set a = Set [a]
 
 -- emptySet is a set with no elements
 emptySet :: Set a
-emptySet = todo
+emptySet = Set []
 
 -- member tests if an element is in a set
-member :: (Eq a) => a -> Set a -> Bool
-member = todo
+member :: (Ord a, Eq a) => a -> Set a -> Bool
+member _ (Set []) = False
+member a (Set (y : ys))
+  | a == y = True
+  | a > y = member a (Set ys)
+  | otherwise = False
 
 -- add a member to a set
-add :: a -> Set a -> Set a
-add = todo
+add :: (Ord a) => a -> Set a -> Set a
+add a (Set y) = Set (insertOrdered a y)
+  where
+    insertOrdered x [] = [x]
+    insertOrdered x (y : ys)
+      | x == y = y : ys
+      | x > y = y : insertOrdered x ys
+      | otherwise = x : y : ys
 
 ------------------------------------------------------------------------------
 -- Ex 3: a state machine for baking a cake. The type Event represents
@@ -92,10 +102,19 @@ add = todo
 data Event = AddEggs | AddFlour | AddSugar | Mix | Bake
   deriving (Eq, Show)
 
-data State = Start | Error | Finished
+data State = Start | EggsAdded | FlourAdded | SugarAdded | FlourAndSugarAdded | Mixed | Error | Finished
   deriving (Eq, Show)
 
-step = todo
+step :: State -> Event -> State
+step Start AddEggs = EggsAdded
+step EggsAdded AddFlour = FlourAdded
+step EggsAdded AddSugar = SugarAdded
+step FlourAdded AddSugar = FlourAndSugarAdded
+step SugarAdded AddFlour = FlourAndSugarAdded
+step FlourAndSugarAdded Mix = Mixed
+step Mixed Bake = Finished
+step Finished _ = Finished
+step _ _ = Error
 
 -- do not edit this
 bake :: [Event] -> State
