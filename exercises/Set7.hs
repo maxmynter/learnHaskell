@@ -7,6 +7,7 @@ import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Monoid
 import Data.Semigroup
 import Mooc.Todo
+import Test.QuickCheck (NonEmptyList (NonEmpty))
 
 ------------------------------------------------------------------------------
 -- Ex 1: you'll find below the types Time, Distance and Velocity,
@@ -135,7 +136,7 @@ bake events = go Start events
 --   average (1.0 :| [2.0,3.0])  ==>  2.0
 
 average :: (Fractional a) => NonEmpty a -> a
-average = todo
+average xs = foldr (\curr acc -> curr + acc) 0 xs / fromIntegral (length xs)
 
 ------------------------------------------------------------------------------
 -- Ex 5: reverse a NonEmpty list.
@@ -143,7 +144,9 @@ average = todo
 -- PS. The Data.List.NonEmpty type has been imported for you
 
 reverseNonEmpty :: NonEmpty a -> NonEmpty a
-reverseNonEmpty = todo
+reverseNonEmpty (x :| xs) = case reverse xs of
+  [] -> x :| []
+  (y : ys) -> y :| (ys ++ [x])
 
 ------------------------------------------------------------------------------
 -- Ex 6: implement Semigroup instances for the Distance, Time and
@@ -155,6 +158,15 @@ reverseNonEmpty = todo
 -- velocity (Distance 50 <> Distance 10) (Time 1 <> Time 2)
 --    ==> Velocity 20
 
+instance Semigroup Velocity where
+  Velocity a <> Velocity b = Velocity (a + b)
+
+instance Semigroup Time where
+  Time a <> Time b = Time (a + b)
+
+instance Semigroup Distance where
+  Distance a <> Distance b = Distance (a + b)
+
 ------------------------------------------------------------------------------
 -- Ex 7: implement a Monoid instance for the Set type from exercise 2.
 -- The (<>) operation should be the union of sets.
@@ -162,6 +174,19 @@ reverseNonEmpty = todo
 -- What's the right definition for mempty?
 --
 -- What are the class constraints for the instances?
+
+instance (Eq a, Ord a) => Semigroup (Set a) where
+  Set as <> Set bs = Set (setUnion as bs)
+    where
+      setUnion x [] = x
+      setUnion [] y = y
+      setUnion (x : xs) (y : ys)
+        | x == y = x : setUnion xs ys
+        | x < y = x : setUnion xs (y : ys)
+        | otherwise = y : setUnion (x : xs) ys
+
+instance (Eq a, Ord a) => Monoid (Set a) where
+  mempty = Set []
 
 ------------------------------------------------------------------------------
 -- Ex 8: below you'll find two different ways of representing
@@ -185,14 +210,18 @@ reverseNonEmpty = todo
 data Operation1
   = Add1 Int Int
   | Subtract1 Int Int
+  | Multiply1 Int Int
   deriving (Show)
 
 compute1 :: Operation1 -> Int
 compute1 (Add1 i j) = i + j
 compute1 (Subtract1 i j) = i - j
+compute1 (Multiply1 i j) = i * j
 
 show1 :: Operation1 -> String
-show1 = todo
+show1 (Add1 i j) = show i ++ "+" ++ show j
+show1 (Subtract1 i j) = show i ++ "-" ++ show j
+show1 (Multiply1 i j) = show i ++ "*" ++ show j
 
 data Add2 = Add2 Int Int
   deriving (Show)
@@ -200,14 +229,24 @@ data Add2 = Add2 Int Int
 data Subtract2 = Subtract2 Int Int
   deriving (Show)
 
+data Multiply2 = Multiply2 Int Int
+  deriving (Show)
+
 class Operation2 op where
   compute2 :: op -> Int
+  show2 :: op -> String
 
 instance Operation2 Add2 where
   compute2 (Add2 i j) = i + j
+  show2 (Add2 i j) = show i ++ "+" ++ show j
 
 instance Operation2 Subtract2 where
   compute2 (Subtract2 i j) = i - j
+  show2 (Subtract2 i j) = show i ++ "-" ++ show j
+
+instance Operation2 Multiply2 where
+  compute2 (Multiply2 i j) = i * j
+  show2 (Multiply2 i j) = show i ++ "*" ++ show j
 
 ------------------------------------------------------------------------------
 -- Ex 9: validating passwords. Below you'll find a type
@@ -236,7 +275,12 @@ data PasswordRequirement
   deriving (Show)
 
 passwordAllowed :: String -> PasswordRequirement -> Bool
-passwordAllowed = todo
+passwordAllowed pw req = case req of
+  (MinimumLength l) -> length pw >= l
+  (ContainsSome s) -> any (`elem` pw) s
+  (DoesNotContain s) -> not $ passwordAllowed pw (ContainsSome s)
+  (And reql reqr) -> passwordAllowed pw reql && passwordAllowed pw reqr
+  (Or reql reqr) -> passwordAllowed pw reql || passwordAllowed pw reqr
 
 ------------------------------------------------------------------------------
 -- Ex 10: a DSL for simple arithmetic expressions with addition and
@@ -258,17 +302,23 @@ passwordAllowed = todo
 --     ==> "(3*(1+1))"
 --
 
-data Arithmetic = Todo
+data Arithmetic = Value Integer | Computation String Arithmetic Arithmetic
   deriving (Show)
 
 literal :: Integer -> Arithmetic
-literal = todo
+literal a = Value a
 
 operation :: String -> Arithmetic -> Arithmetic -> Arithmetic
-operation = todo
+operation op a b = Computation op a b
 
 evaluate :: Arithmetic -> Integer
-evaluate = todo
+evaluate (Value a) = a
+evaluate (Computation op (Computation op' x y) b) = evaluate (Computation op (Value (evaluate (Computation op' x y))) b)
+evaluate (Computation op a (Computation op' x y)) = evaluate (Computation op a (Value (evaluate (Computation op' x y))))
+evaluate (Computation op (Value a) (Value b)) = case op of
+  "+" -> a + b
+  "*" -> a * b
 
 render :: Arithmetic -> String
-render = todo
+render (Value a) = show a
+render (Computation op a b) = "(" ++ render a ++ op ++ render b ++ ")"
