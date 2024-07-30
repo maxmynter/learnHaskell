@@ -313,11 +313,12 @@ operation op a b = Computation op a b
 
 evaluate :: Arithmetic -> Integer
 evaluate (Value a) = a
-evaluate (Computation op (Computation op' x y) b) = evaluate (Computation op (Value (evaluate (Computation op' x y))) b)
-evaluate (Computation op a (Computation op' x y)) = evaluate (Computation op a (Value (evaluate (Computation op' x y))))
-evaluate (Computation op (Value a) (Value b)) = case op of
-  "+" -> a + b
-  "*" -> a * b
+evaluate (Computation op a b) = case op of
+  "+" -> valA + valB
+  "*" -> valA * valB
+  where
+    valA = evaluate a
+    valB = evaluate b
 
 render :: Arithmetic -> String
 render (Value a) = show a
