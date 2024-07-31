@@ -466,8 +466,8 @@ instance Transform Flip where
 data Chain a b = Chain a b
   deriving (Show)
 
-instance Transform (Chain a b) where
-  apply = todo
+instance (Transform a, Transform b) => Transform (Chain a b) where
+  apply (Chain a b) pic = apply a (apply b pic)
 
 ------------------------------------------------------------------------------
 
@@ -506,7 +506,13 @@ data Blur = Blur
   deriving (Show)
 
 instance Transform Blur where
-  apply = todo
+  apply Blur (Picture p) = Picture blurred
+    where
+      blurred (Coord x y) =
+        let colors = [p (Coord x y), p (Coord (x - 1) y), p (Coord (x + 1) y), p (Coord x (y - 1)), p (Coord x (y + 1))]
+            (r, g, b) = foldr accColors (0, 0, 0) colors
+         in Color (div r 5) (div g 5) (div b 5)
+      accColors (Color r g b) (accR, accG, accB) = (accR + r, accG + g, accB + b)
 
 ------------------------------------------------------------------------------
 
@@ -525,7 +531,10 @@ data BlurMany = BlurMany Int
   deriving (Show)
 
 instance Transform BlurMany where
-  apply = todo
+  apply (BlurMany b) pic
+    | b <= 0 = pic
+    | b == 1 = apply Blur pic
+    | otherwise = apply (Chain Blur (BlurMany (b - 1))) pic
 
 ------------------------------------------------------------------------------
 
