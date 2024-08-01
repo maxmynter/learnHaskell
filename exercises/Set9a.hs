@@ -217,7 +217,10 @@ skip c = isSpace c || c == '\n'
 --       ==> [("a",1),("b",2)]
 
 compose :: (Eq a, Eq b) => [(a, b)] -> [(b, c)] -> [(a, c)]
-compose = todo
+compose [] _ = []
+compose ((kl, vl) : ls) rs = case lookup vl rs of
+  Just vr -> (kl, vr) : compose ls rs
+  Nothing -> compose ls rs
 
 ------------------------------------------------------------------------------
 -- Ex 9: Reorder a list using a list of indices.
@@ -261,4 +264,5 @@ multiply :: Permutation -> Permutation -> Permutation
 multiply p q = map (\i -> p !! (q !! i)) (identity (length p))
 
 permute :: Permutation -> [a] -> [a]
-permute = todo
+permute [] _ = []
+permute ps as = map snd $ sortOn fst $ zip ps as
