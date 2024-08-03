@@ -248,19 +248,14 @@ danger coord (q : qs) =
 -- solution to this version. Any working solution is okay in this exercise.)
 
 prettyPrint2 :: Size -> Stack -> String
-prettyPrint2 size queens = go (1, 1) (sortQueens queens)
+prettyPrint2 size queens = unlines [rowString r | r <- [1 .. size]]
   where
-    go (row, col) []
-      | row > size = ""
-      | col > size = '\n' : go (nextRow (row, col)) []
-      | danger (row, col) queens = '#' : go (nextCol (row, col)) []
-      | otherwise = '.' : go (nextCol (row, col)) []
-    go (row, col) qs@((qRow, qCol) : restQueens)
-      | row > size = ""
-      | col > size = '\n' : go (nextRow (row, col)) qs
-      | (row, col) == (qRow, qCol) = 'Q' : go (nextCol (row, col)) restQueens
-      | danger (row, col) queens = '#' : go (nextCol (row, col)) qs
-      | otherwise = '.' : go (nextCol (row, col)) qs
+    sortedQueens = sortQueens queens
+    rowString r = [cellChar r c | c <- [1 .. size]]
+    cellChar r c
+      | (r, c) `elem` sortedQueens = 'Q'
+      | danger (r, c) sortedQueens = '#'
+      | otherwise = '.'
 
 --------------------------------------------------------------------------------
 -- Ex 6: Now that we can check if a piece can be safely placed into a square in
@@ -305,7 +300,11 @@ prettyPrint2 size queens = go (1, 1) (sortQueens queens)
 --     Q#######
 
 fixFirst :: Size -> Stack -> Maybe Stack
-fixFirst n s = todo
+fixFirst size [] = Nothing
+fixFirst size qs@((qRow, qCol) : queens)
+  | qRow > size || qCol > size = Nothing
+  | danger (qRow, qCol) queens = fixFirst size (nextCol (qRow, qCol) : queens)
+  | otherwise = Just qs
 
 --------------------------------------------------------------------------------
 -- Ex 7: We need two helper functions for stack management.
