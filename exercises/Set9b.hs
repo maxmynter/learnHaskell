@@ -144,13 +144,13 @@ sortQueens = sortOn (\(row, col) -> (row, col))
 --   sameAntidiag (500,5) (5,500) ==> True
 
 sameRow :: Coord -> Coord -> Bool
-sameRow (i, j) (k, l) = i == k
+sameRow (i, _) (k, _) = i == k
 
 sameCol :: Coord -> Coord -> Bool
-sameCol (i, j) (k, l) = j == l
+sameCol (_, j) (_, l) = j == l
 
 sameDiag :: Coord -> Coord -> Bool
-sameDiag (i, j) (k, l) = abs (i - j) == abs (k - l)
+sameDiag (i, j) (k, l) = i - k == j - l
 
 sameAntidiag :: Coord -> Coord -> Bool
 sameAntidiag (i, j) (k, l) = i + j == k + l
@@ -209,7 +209,11 @@ type Candidate = Coord
 type Stack = [Coord]
 
 danger :: Candidate -> Stack -> Bool
-danger = todo
+danger _ [] = False
+danger coord (q : qs) =
+  if any ($ coord) (map ($ q) [sameRow, sameCol, sameDiag, sameAntidiag])
+    then True
+    else danger coord qs
 
 --------------------------------------------------------------------------------
 -- Ex 5: In this exercise, the task is to write a modified version of
@@ -244,7 +248,19 @@ danger = todo
 -- solution to this version. Any working solution is okay in this exercise.)
 
 prettyPrint2 :: Size -> Stack -> String
-prettyPrint2 = todo
+prettyPrint2 size queens = go (1, 1) (sortQueens queens)
+  where
+    go (row, col) []
+      | row > size = ""
+      | col > size = '\n' : go (nextRow (row, col)) []
+      | danger (row, col) queens = '#' : go (nextCol (row, col)) []
+      | otherwise = '.' : go (nextCol (row, col)) []
+    go (row, col) qs@((qRow, qCol) : restQueens)
+      | row > size = ""
+      | col > size = '\n' : go (nextRow (row, col)) qs
+      | (row, col) == (qRow, qCol) = 'Q' : go (nextCol (row, col)) restQueens
+      | danger (row, col) queens = '#' : go (nextCol (row, col)) qs
+      | otherwise = '.' : go (nextCol (row, col)) qs
 
 --------------------------------------------------------------------------------
 -- Ex 6: Now that we can check if a piece can be safely placed into a square in
