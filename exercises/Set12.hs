@@ -109,7 +109,7 @@ count a container = foldr (\e c -> if e == a then c + 1 else c) 0 container
 --   inBoth Nothing [3]    ==> []
 
 inBoth :: (Foldable f, Foldable g, Eq a) => f a -> g a -> [a]
-inBoth = todo
+inBoth a b = filter (`elem` toList a) (toList b)
 
 ------------------------------------------------------------------------------
 -- Ex 8: Implement the instance Foldable List.
@@ -122,7 +122,8 @@ inBoth = todo
 --   length (LNode 1 (LNode 2 (LNode 3 Empty))) ==> 3
 
 instance Foldable List where
-  foldr = todo
+  foldr f acc Empty = acc
+  foldr f acc (LNode a rest) = f a (foldr f acc rest)
 
 ------------------------------------------------------------------------------
 -- Ex 9: Implement the instance Foldable TwoList.
@@ -132,7 +133,8 @@ instance Foldable List where
 --   length (TwoNode 0 1 (TwoNode 2 3 TwoEmpty)) ==> 4
 
 instance Foldable TwoList where
-  foldr = todo
+  foldr f acc TwoEmpty = acc
+  foldr f acc (TwoNode a b rest) = f a (f b (foldr f acc rest))
 
 ------------------------------------------------------------------------------
 -- Ex 10: (Tricky!) Fun a is a type that wraps a function Int -> a.
@@ -146,7 +148,8 @@ data Fun a = Fun (Int -> a)
 runFun :: Fun a -> Int -> a
 runFun (Fun f) x = f x
 
-instance Functor Fun
+instance Functor Fun where
+  fmap f (Fun g) = Fun $ f . g
 
 ------------------------------------------------------------------------------
 -- Ex 11: (Tricky!) You'll find the binary tree type from Set 5b
@@ -203,10 +206,12 @@ data Tree a = Leaf | Node a (Tree a) (Tree a)
   deriving (Show)
 
 instance Functor Tree where
-  fmap = todo
+  fmap f Leaf = Leaf
+  fmap f (Node x left right) = Node (f x) (fmap f left) (fmap f right)
 
 sumTree :: (Monoid m) => Tree m -> m
-sumTree = todo
+sumTree Leaf = mempty
+sumTree (Node x left right) = sumTree left `mappend` x `mappend` sumTree right
 
 instance Foldable Tree where
   foldMap f t = sumTree (fmap f t)
