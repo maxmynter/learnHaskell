@@ -151,7 +151,12 @@ instance Applicative Logger where
   (<*>) = ap
 
 countAndLog :: (Show a) => (a -> Bool) -> [a] -> Logger Int
-countAndLog = todo
+countAndLog f as = go as 0
+  where
+    go [] acc = return acc
+    go (a : as) acc
+      | f a = msg (show a) >> go as (acc + 1)
+      | otherwise = go as acc
 
 ------------------------------------------------------------------------------
 -- Ex 5: You can find the Bank and BankOp code from the course
@@ -168,11 +173,11 @@ exampleBank :: Bank
 exampleBank = (Bank (Map.fromList [("harry", 10), ("cedric", 7), ("ginny", 1)]))
 
 balance :: String -> BankOp Int
-balance accountName = todo
+balance accountName = BankOp $ \(Bank accounts) -> (Map.findWithDefault 0 accountName accounts, Bank accounts)
 
 ------------------------------------------------------------------------------
 -- Ex 6: Using the operations balance, withdrawOp and depositOp, and
--- chaining (+>), implement the BankOp rob, which transfers all the
+-- chaining , implement the BankOp rob, which transfers all the
 -- money from one account to another account.
 --
 -- Examples:
@@ -186,7 +191,10 @@ balance accountName = todo
 --     ==> ((),Bank (fromList [("cedric",7),("ginny",1),("harry",10)]))
 
 rob :: String -> String -> BankOp ()
-rob from to = todo
+rob from to =
+  balance from
+    +> withdrawOp from
+    +> depositOp to
 
 ------------------------------------------------------------------------------
 -- Ex 7: using the State monad, write the operation `update` that first
@@ -198,8 +206,9 @@ rob from to = todo
 --    ==> ((),7)
 
 update :: State Int ()
-update = todo
+update = modify (\s -> 2 * s + 1)
 
+--
 ------------------------------------------------------------------------------
 -- Ex 8: Checking that parentheses are balanced with the State monad.
 --
