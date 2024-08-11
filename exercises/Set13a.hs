@@ -235,7 +235,12 @@ update = modify (\s -> 2 * s + 1)
 --   parensMatch "(()))("      ==> False
 
 paren :: Char -> State Int ()
-paren = todo
+paren p = state matchCount
+  where
+    matchCount a
+      | a < 0 = ((), -1)
+      | p == '(' = ((), a + 1)
+      | otherwise = ((), a - 1)
 
 parensMatch :: String -> Bool
 parensMatch s = count == 0
@@ -267,7 +272,12 @@ parensMatch s = count == 0
 -- PS. The order of the list of pairs doesn't matter
 
 count :: (Eq a) => a -> State [(a, Int)] ()
-count x = todo
+count x =
+  let elemCount [] = [(x, 1)]
+      elemCount ((y, n) : ys)
+        | x == y = (y, n + 1) : ys
+        | otherwise = (y, n) : elemCount ys
+   in modify elemCount
 
 ------------------------------------------------------------------------------
 -- Ex 10: Implement the operation occurrences, which
@@ -289,4 +299,9 @@ count x = todo
 --    ==> (4,[(2,1),(3,1),(4,1),(7,1)])
 
 occurrences :: (Eq a) => [a] -> State [(a, Int)] Int
-occurrences xs = todo
+occurrences xs = do
+  mapM_ count xs
+  countUnique
+
+countUnique :: State [(a, Int)] Int
+countUnique = gets length
