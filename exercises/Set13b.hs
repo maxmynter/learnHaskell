@@ -5,6 +5,7 @@ module Set13b where
 
 import Control.Monad
 import Control.Monad.Trans.State
+import Data.ByteString (count)
 import Data.Char
 import Data.IORef
 import Data.List
@@ -275,7 +276,9 @@ data Result a = MkResult a | NoResult | Failure String deriving (Show, Eq)
 
 instance Functor Result where
   -- The same Functor instance you used in Set12 works here.
-  fmap = todo
+  fmap f NoResult = NoResult
+  fmap f (Failure s) = Failure s
+  fmap f (MkResult a) = MkResult $ f a
 
 -- This is an Applicative instance that works for any monad, you
 -- can just ignore it for now. We'll get back to Applicative later.
@@ -285,8 +288,10 @@ instance Applicative Result where
 
 instance Monad Result where
   -- implement return and >>=
-  return = todo
-  (>>=) = todo
+  return = MkResult
+  (>>=) (MkResult r) f = f r
+  (>>=) NoResult _ = NoResult
+  (>>=) (Failure s) _ = Failure s
 
 ------------------------------------------------------------------------------
 -- Ex 8: Here is the type SL that combines the State and Logger
@@ -334,7 +339,7 @@ modifySL f = SL (\s -> ((), f s, []))
 
 instance Functor SL where
   -- implement fmap
-  fmap = todo
+  fmap f (SL g) = SL $ \s -> let (a, s', logs) = g s in (f a, s', logs)
 
 -- This is an Applicative instance that works for any monad, you
 -- can just ignore it for now. We'll get back to Applicative later.
@@ -344,8 +349,12 @@ instance Applicative SL where
 
 instance Monad SL where
   -- implement return and >>=
-  return = todo
-  (>>=) = todo
+  return a = SL $ \s -> (a, s, [])
+  (>>=) (SL f) g = SL $ \s ->
+    let (a, s', logs1) = f s
+        SL h = g a
+        (b, s'', logs2) = h s'
+     in (b, s'', logs1 ++ logs2)
 
 ------------------------------------------------------------------------------
 -- Ex 9: Implement the operation mkCounter that produces the IO operations
@@ -373,4 +382,8 @@ instance Monad SL where
 --  4
 
 mkCounter :: IO (IO (), IO Int)
-mkCounter = todo
+mkCounter = do
+  countRef <- newIORef 0
+  let inc = modifyIORef' countRef (+ 1)
+      get = readIORef countRef
+  return (inc, get)
