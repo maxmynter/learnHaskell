@@ -192,7 +192,9 @@ parseCommand (c : cs)
 --   "0"
 
 perform :: Connection -> Maybe Command -> IO T.Text
-perform = todo
+perform db (Just command) = case command of
+  Deposit account amount -> deposit db account amount >> return (T.pack "OK")
+  Balance account -> balance db account >>= return . T.pack . show
 
 ------------------------------------------------------------------------------
 -- Ex 5: Next up, let's set up a simple HTTP server. Implement a WAI
