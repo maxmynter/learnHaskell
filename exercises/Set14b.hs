@@ -160,7 +160,13 @@ parseInt :: T.Text -> Maybe Int
 parseInt = readMaybe . T.unpack
 
 parseCommand :: [T.Text] -> Maybe Command
-parseCommand = todo
+parseCommand [] = Nothing
+parseCommand (c : cs)
+  | c == T.pack "balance" && length cs == 1 = Just (Balance (head cs))
+  | c == T.pack "deposit" && length cs == 2 = case parseInt $ cs !! 1 of
+      Just amount -> Just (Deposit (head cs) amount)
+      Nothing -> Nothing
+  | otherwise = Nothing
 
 ------------------------------------------------------------------------------
 -- Ex 4: Running commands. Implement the IO operation perform that takes a
