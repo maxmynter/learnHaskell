@@ -15,10 +15,12 @@ import qualified Data.ByteString.Lazy as LB
 import Data.Maybe
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
-import qualified Data.Text.Read as TR
 -- HTTP server
 
 -- Database
+
+import qualified Data.Text.Internal.Builder as LB
+import qualified Data.Text.Read as TR
 import Database.SQLite.Simple (Connection, Query (..), execute, execute_, open, query, query_)
 import Mooc.Todo
 import Network.HTTP.Types (status200)
@@ -214,7 +216,7 @@ encodeResponse t = LB.fromStrict (encodeUtf8 t)
 -- Remember:
 -- type Application = Request -> (Response -> IO ResponseReceived) -> IO ResponseReceived
 simpleServer :: Application
-simpleServer request respond = todo
+simpleServer request respond = respond $ responseLBS status200 [] (encodeResponse $ T.pack "BANK")
 
 ------------------------------------------------------------------------------
 -- Ex 6: Now we finally have all the pieces we need to actually
