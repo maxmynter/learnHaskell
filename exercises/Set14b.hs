@@ -23,8 +23,8 @@ import qualified Data.Text.Internal.Builder as LB
 import qualified Data.Text.Read as TR
 import Database.SQLite.Simple (Connection, Query (..), execute, execute_, open, query, query_)
 import Mooc.Todo
-import Network.HTTP.Types (status200)
-import Network.Wai (Application, pathInfo, responseLBS)
+import Network.HTTP.Types (status200, status400)
+import Network.Wai (Application, Response, pathInfo, responseLBS)
 import Network.Wai.Handler.Warp (run)
 import Text.Read (readMaybe)
 
@@ -155,20 +155,18 @@ balance db account = do
 --   parseCommand [T.pack "deposit", T.pack "madoff", T.pack "123456"]
 --     ==> Just (Deposit "madoff" 123456)
 
-data Command = Deposit T.Text Int | Balance T.Text
+data Command = Deposit T.Text Int | Withdraw T.Text Int | Balance T.Text
   deriving (Show, Eq)
 
 parseInt :: T.Text -> Maybe Int
 parseInt = readMaybe . T.unpack
 
 parseCommand :: [T.Text] -> Maybe Command
-parseCommand [] = Nothing
-parseCommand (c : cs)
-  | c == T.pack "balance" && length cs == 1 = Just (Balance (head cs))
-  | c == T.pack "deposit" && length cs == 2 = case parseInt $ cs !! 1 of
-      Just amount -> Just (Deposit (head cs) amount)
-      Nothing -> Nothing
-  | otherwise = Nothing
+parseCommand input = case input of
+  [cmd, account] | cmd == T.pack "balance" -> Just (Balance account)
+  [cmd, account, amount] | cmd == T.pack "deposit" -> Deposit account <$> parseInt amount
+  [cmd, account, amount] | cmd == T.pack "withdraw" -> Withdraw account <$> parseInt amount
+  _ -> Nothing
 
 ------------------------------------------------------------------------------
 -- Ex 4: Running commands. Implement the IO operation perform that takes a
@@ -194,8 +192,10 @@ parseCommand (c : cs)
 --   "0"
 
 perform :: Connection -> Maybe Command -> IO T.Text
+perform _ Nothing = return $ T.pack "ERROR"
 perform db (Just command) = case command of
   Deposit account amount -> deposit db account amount >> return (T.pack "OK")
+  Withdraw account amount -> withdraw db account amount >> return (T.pack "OK")
   Balance account -> balance db account >>= return . T.pack . show
 
 ------------------------------------------------------------------------------
@@ -211,7 +211,7 @@ perform db (Just command) = case command of
 --   - Go to <http://localhost:8899> in your browser, you should see the text BANK
 
 encodeResponse :: T.Text -> LB.ByteString
-encodeResponse t = LB.fromStrict (encodeUtf8 t)
+encodeResponse = LB.fromStrict . encodeUtf8
 
 -- Remember:
 -- type Application = Request -> (Response -> IO ResponseReceived) -> IO ResponseReceived
@@ -245,7 +245,16 @@ simpleServer request respond = respond $ responseLBS status200 [] (encodeRespons
 -- Remember:
 -- type Application = Request -> (Response -> IO ResponseReceived) -> IO ResponseReceived
 server :: Connection -> Application
-server db request respond = todo
+server db request respond = case parseCommand (pathInfo request) of
+  Nothing -> respond $ createResponse (T.pack "ERROR")
+  Just cmd -> do
+    result <- perform db (Just cmd)
+    respond $ createResponse result
+
+createResponse :: T.Text -> Response
+createResponse response
+  | response == T.pack "ERROR" = responseLBS status400 [] (encodeResponse $ T.pack "ERROR")
+  | otherwise = responseLBS status200 [] (encodeResponse response)
 
 port :: Int
 port = 3421
@@ -275,6 +284,9 @@ main = do
 --     You should see the text OK.
 --   - Open <http://localhost:3421/balance/simon> in your browser.
 --     You should see the text 11.
+
+withdraw :: Connection -> T.Text -> Int -> IO ()
+withdraw connection account amount = execute connection depositQuery (account, -amount)
 
 ------------------------------------------------------------------------------
 -- Ex 8: Error handling. Modify the parseCommand function so that it
