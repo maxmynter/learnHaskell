@@ -16,8 +16,7 @@ import Text.Read (readMaybe)
 --  sumTwoMaybes Nothing Nothing    ==> Nothing
 
 sumTwoMaybes :: Maybe Int -> Maybe Int -> Maybe Int
-sumTwoMaybes (Just a) (Just b) = Just (a + b)
-sumTwoMaybes _ _ = Nothing
+sumTwoMaybes = liftA2 (+)
 
 ------------------------------------------------------------------------------
 -- Ex 2: Given two lists of words, xs and ys, generate all statements
@@ -36,7 +35,7 @@ sumTwoMaybes _ _ = Nothing
 --         "code is not suffering","code is not life"]
 
 statements :: [String] -> [String] -> [String]
-statements = todo
+statements as bs = (++) <$> as <*> (((" is " ++) <$> bs) ++ ((" is not " ++) <$> bs))
 
 ------------------------------------------------------------------------------
 -- Ex 3: A simple calculator with error handling. Given an operation
