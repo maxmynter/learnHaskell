@@ -75,7 +75,10 @@ calculator op val = go op <*> readMaybe val
 --  validateDiv 0 3 ==> Ok 0
 
 validateDiv :: Int -> Int -> Validation Int
-validateDiv = todo
+validateDiv n d = liftA2 div num den
+  where
+    num = pure n
+    den = check (d > 0) "Division by zero!" d
 
 ------------------------------------------------------------------------------
 -- Ex 5: Validating street addresses. A street address consists of a
@@ -111,7 +114,23 @@ data Address = Address String String String
   deriving (Show, Eq)
 
 validateAddress :: String -> String -> String -> Validation Address
-validateAddress streetName streetNumber postCode = todo
+validateAddress streetName streetNumber postCode =
+  Address
+    <$> validateStreetName streetName
+    <*> validateStreetNumber streetNumber
+    <*> validatePostcode postCode
+
+validateStreetName :: String -> Validation String
+validateStreetName name =
+  check (length name <= 20) "Invalid street name" name
+
+validateStreetNumber :: String -> Validation String
+validateStreetNumber number =
+  check (all isDigit number) "Invalid street number" number
+
+validatePostcode :: String -> Validation String
+validatePostcode code =
+  check (length code == 5 && all isDigit code) "Invalid postcode" code
 
 ------------------------------------------------------------------------------
 -- Ex 6: Given the names, ages and employment statuses of two
