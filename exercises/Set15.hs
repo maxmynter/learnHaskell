@@ -53,7 +53,12 @@ statements as bs = (++) <$> as <*> (((" is " ++) <$> bs) ++ ((" is not " ++) <$>
 --  calculator "double" "7x"  ==> Nothing
 
 calculator :: String -> String -> Maybe Int
-calculator = todo
+calculator op val = go op <*> readMaybe val
+  where
+    go x = case op of
+      "negate" -> Just ((*) (-1))
+      "double" -> Just ((*) 2)
+      _ -> Nothing
 
 ------------------------------------------------------------------------------
 -- Ex 4: Safe division. Implement the function validateDiv that
