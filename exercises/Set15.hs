@@ -232,7 +232,12 @@ isBool b = case b of
 --    ==> Errors ["Too long"]
 
 normalizePhone :: String -> Validation String
-normalizePhone = todo
+normalizePhone number =
+  let str = filter (/= ' ') number
+      checkLen s = check (length s <= 10) "Too long" s
+      validate s = check (isDigit s) ("Invalid character: " ++ [s]) s
+      sanitize = traverse validate
+   in checkLen str *> sanitize str
 
 ------------------------------------------------------------------------------
 -- Ex 9: Parsing expressions. The Expression type describes an
