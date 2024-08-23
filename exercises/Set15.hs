@@ -2,8 +2,11 @@ module Set15 where
 
 import Control.Applicative
 import Data.Char
+import Data.Maybe (fromJust)
 import Examples.Validation
 import Mooc.Todo
+import Set12 (Result (Failure))
+import Test.QuickCheck.Exception (isInterrupt)
 import Text.Read (readMaybe)
 
 ------------------------------------------------------------------------------
@@ -158,7 +161,8 @@ twoPersons ::
   f Int ->
   f Bool ->
   f [Person]
-twoPersons name1 age1 employed1 name2 age2 employed2 = todo
+twoPersons name1 age1 employed1 name2 age2 employed2 =
+  liftA2 (\p1 p2 -> [p1, p2]) (Person <$> name1 <*> age1 <*> employed1) (Person <$> name2 <*> age2 <*> employed2)
 
 ------------------------------------------------------------------------------
 -- Ex 7: Validate a String that's either a Bool or an Int. The return
@@ -178,7 +182,27 @@ twoPersons name1 age1 employed1 name2 age2 employed2 = todo
 --  boolOrInt "Falseb"  ==> Errors ["Not a Bool","Not an Int"]
 
 boolOrInt :: String -> Validation (Either Bool Int)
-boolOrInt = todo
+boolOrInt val = checkBool val <|> checkInt val
+  where
+    checkBool b = check (isBool b) "Not a Bool" (Left (fromJust $ parseBool b))
+    checkInt i = check (isInt i) "Not an Int" (Right (fromJust $ parseInt i))
+
+isInt :: String -> Bool
+isInt i = case parseInt i of
+  Just x -> True
+  Nothing -> False
+
+parseInt :: String -> Maybe Int
+parseInt i = readMaybe i
+
+parseBool :: String -> Maybe Bool
+parseBool b = readMaybe b
+
+isBool :: String -> Bool
+isBool b = case b of
+  "True" -> True
+  "False" -> True
+  otherwise -> False
 
 ------------------------------------------------------------------------------
 -- Ex 8: Improved phone number validation. Implement the function
