@@ -280,8 +280,21 @@ data Arg = Number Int | Variable Char
 data Expression = Plus Arg Arg | Minus Arg Arg
   deriving (Show, Eq)
 
+parseArg :: String -> Validation Arg
+parseArg s
+  | all isDigit s = pure (Number (read s))
+  | length s == 1 && isAlpha (head s) = pure (Variable (head s))
+  | otherwise = invalid ("Invalid number: " ++ s) *> invalid ("Invalid variable: " ++ s)
+
+parseOperator :: String -> Validation (Arg -> Arg -> Expression)
+parseOperator "+" = pure Plus
+parseOperator "-" = pure Minus
+parseOperator op = invalid ("Unknown operator: " ++ op)
+
 parseExpression :: String -> Validation Expression
-parseExpression = todo
+parseExpression s = case words s of
+  [arg1, op, arg2] -> parseOperator op <*> parseArg arg1 <*> parseArg arg2
+  _ -> invalid ("Invalid expression: " ++ s)
 
 ------------------------------------------------------------------------------
 -- Ex 10: The Priced T type tracks a value of type T, and a price
