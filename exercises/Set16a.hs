@@ -1,5 +1,7 @@
 module Set16a where
 
+import Control.Monad (liftM2)
+import Data.Foldable (Foldable (toList))
 import Data.List
 import Mooc.Todo
 import Test.QuickCheck
@@ -109,7 +111,11 @@ freq2 xs = map (\x -> (x, 1)) xs
 --  +++ OK, passed 100 tests.
 
 outputInInput :: (Show a, Eq a) => [a] -> [(a, Int)] -> Property
-outputInInput input output = todo
+outputInInput input output =
+  not (null output)
+    ==> conjoin [counterexample (show (x, n)) $ count x input === n | (x, n) <- output]
+  where
+    count x = length . filter (== x)
 
 -- This function passes the outputInInput test but not the others
 freq3 :: (Eq a) => [a] -> [(a, Int)]
@@ -138,7 +144,13 @@ freq3 (x : xs) = [(x, 1 + length (filter (== x) xs))]
 --  +++ OK, passed 100 tests.
 
 frequenciesProp :: ([Char] -> [(Char, Int)]) -> NonEmptyList Char -> Property
-frequenciesProp freq input = todo
+frequenciesProp freq (NonEmpty input) =
+  let output = freq (toList input)
+   in conjoin
+        [ sumIsLength (toList input) output,
+          inputInOutput (toList input) output,
+          outputInInput (toList input) output
+        ]
 
 frequencies :: (Eq a) => [a] -> [(a, Int)]
 frequencies [] = []
@@ -174,7 +186,10 @@ frequencies (x : ys) = (x, length xs) : frequencies others
 --  [2,4,10]
 
 genList :: Gen [Int]
-genList = todo
+genList = do
+  len <- choose (3, 5)
+  unsorted <- vectorOf len (choose (0, 10))
+  return (sort unsorted)
 
 ------------------------------------------------------------------------------
 -- Ex 7: Here are the datatypes Arg and Expression from Set 15. Write
@@ -216,7 +231,15 @@ data Expression = Plus Arg Arg | Minus Arg Arg
   deriving (Show, Eq)
 
 instance Arbitrary Arg where
-  arbitrary = todo
+  arbitrary =
+    oneof
+      [ Number <$> choose (0, 10),
+        Variable <$> elements ['a', 'b', 'c', 'x', 'y', 'z']
+      ]
 
 instance Arbitrary Expression where
-  arbitrary = todo
+  arbitrary =
+    oneof
+      [ liftM2 Plus arbitrary arbitrary,
+        liftM2 Minus arbitrary arbitrary
+      ]
