@@ -5,7 +5,6 @@ import Data.Char
 import Data.Maybe (fromJust)
 import Examples.Validation
 import Mooc.Todo
-import Set12 (Result (Failure))
 import Test.QuickCheck.Exception (isInterrupt)
 import Text.Read (readMaybe)
 
